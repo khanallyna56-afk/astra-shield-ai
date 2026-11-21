@@ -189,6 +189,20 @@ class SpaceEngine:
         min_peak = get_settings().saa_pass_min_peak
         return [p for p in saa_windows(self.ground_track(hours, start)) if p["peak_intensity"] >= min_peak]
 
+    def next_saa_cluster_start(self, now: datetime, min_gap_h: float = 3.0) -> dict | None:
+        """First significant SAA pass at/after ``now`` that follows a >= ``min_gap_h`` pass-free gap.
+
+        LEO SAA passes come in clusters of ~4-6 consecutive orbits, about twice a
+        day. The demo anchors its scenario clock here ("flare as the station
+        enters the SAA"), which makes the re-planning outcome independent of the
+        wall-clock time the demo is run.
+        """
+        passes = self.predict_saa_passes(42, (now - timedelta(hours=6)).replace(second=0, microsecond=0))
+        for a, b in zip(passes, passes[1:]):
+            if b["start"] >= now and b["start"] - a["end"] >= timedelta(hours=min_gap_h):
+                return b
+        return None
+
     def sunrise_count(self, hours: float = 24, start: datetime | None = None) -> int:
         """Number of eclipse->sunlit transitions (orbital sunrises); ~16 per day in LEO."""
         track = self.ground_track(hours, start)
