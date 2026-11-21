@@ -26,6 +26,8 @@ class Settings(BaseSettings):
         (0.0, -90.0), (0.0, 40.0), (-50.0, 40.0), (-50.0, -90.0),
     ]
     saa_peak: tuple[float, float] = (-25.0, -50.0)
+    # A predicted "pass" must reach this peak intensity; filters edge clips of the wide polygon.
+    saa_pass_min_peak: float = 0.2
 
     # Cache TTLs (seconds)
     tle_ttl_s: int = 6 * 3600
