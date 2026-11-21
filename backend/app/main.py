@@ -12,7 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app import services as svc
 from app.config import get_settings
 from app.db import SessionLocal, get_session
-from app.routers import alerts, crew, mission, risk, schedule, space, ws
+from app.routers import alerts, crew, demo, mission, risk, schedule, space, ws
 
 settings = get_settings()
 log = logging.getLogger("astra")
@@ -62,7 +62,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-for r in (mission, space, crew, risk, schedule, alerts, ws):
+for r in (mission, space, crew, risk, schedule, alerts, demo, ws):
     app.include_router(r.router)
 
 

@@ -333,11 +333,63 @@ async def cumulative_dose(session: AsyncSession, astronaut: Astronaut, hours: in
 
 
 # --------------------------------------------------------------- scenarios
-async def clear_dynamic(session: AsyncSession) -> None:
-    """Drop replanned schedules, alerts, history and scenarios (keeps crew, readings, baseline)."""
+DEMO = {"name": "solar-flare-during-saa", "flare_class": "X2.1", "flare_flux": 2.1e-4, "saa_intensity": 0.80}
+
+
+def _floor15(t: datetime) -> datetime:
+    t = t.replace(second=0, microsecond=0)
+    return t - timedelta(minutes=t.minute % 15)
+
+
+async def _rebuild_baseline(session: AsyncSession, anchor: datetime) -> None:
+    """Replace all schedule versions with a fresh baseline (version 0) starting at ``anchor``."""
+    from app.data.crew_simulator import baseline_blocks
+
+    await session.execute(delete(ScheduleBlock))
+    for a in (await session.execute(select(Astronaut))).scalars():
+        session.add_all(ScheduleBlock(astronaut_id=a.id, version=0, is_replanned=False, **b)
+                        for b in baseline_blocks(a.callsign, anchor))
+    await session.commit()
+
+
+async def run_demo(session: AsyncSession) -> dict:
+    """Solar-flare demo (deterministic).
+
+    1. Jump the mission clock to the first pass of the next SAA cluster (orbit-anchored,
+       so the outcome does not depend on wall-clock time) and re-anchor the baseline
+       schedule 1 h earlier, so Vyomnaut 02's EVA collides with the SAA cluster.
+    2. Inject an X2.1 flare and SAA intensity 0.80.
+    3. Recompute risk, fire actions (alerts rows) and re-plan the schedule.
+    """
     global SCENARIO
     SCENARIO = None
-    await session.execute(delete(ScheduleBlock).where(ScheduleBlock.version > 0))
+    eng = await get_engine(session)
+    p = eng.next_saa_cluster_start(eng.reference_time())
+    sim_now = (p["start"] + timedelta(minutes=1)) if p else eng.reference_time()
+    await session.execute(delete(Alert))
+    await session.execute(delete(Scenario))
+    await session.commit()
+    await _rebuild_baseline(session, _floor15(sim_now - timedelta(hours=1)))
+
+    SCENARIO = {**DEMO, "sim_now": sim_now}
+    session.add(Scenario(name=DEMO["name"], started_at=datetime.now(UTC),
+                         state={**DEMO, "sim_now": iso(sim_now)}))
+    await session.commit()
+
+    live = await tick(session)
+    schedule = await replan(session)
+    return {"scenario": DEMO["name"], "sim_now": iso(sim_now), "crew": live["crew"], "actions": live["actions"],
+            "lighting": live["lighting"], "schedule": schedule, "live": live}
+
+
+async def reset_demo(session: AsyncSession) -> dict:
+    """Leave the scenario: real clock, fresh baseline at the current hour, cleared alerts and history."""
+    global SCENARIO
+    SCENARIO = None
     for m in (Alert, RiskScore, SpaceSnapshot, Scenario):
         await session.execute(delete(m))
     await session.commit()
+    eng = await get_engine(session)
+    await _rebuild_baseline(session, eng.reference_time().replace(minute=0, second=0, microsecond=0))
+    await backfill_history(session)
+    return await live_payload(session)
