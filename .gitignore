@@ -33,3 +33,7 @@ backend/app/data/aditya/*
 Thumbs.db
 .vscode/
 .idea/
+
+# Local SQLite database
+*.db
+*.db-journal
