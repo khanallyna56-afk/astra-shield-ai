@@ -14,6 +14,7 @@ class Settings(BaseSettings):
     cors_origins: str = "http://localhost:5173,http://localhost:3000"
     log_level: str = "info"
     ephemeris_path: str = ""
+    ticker_enabled: bool = True   # background snapshot task (disabled in tests)
 
     # Risk fusion weights (design choices, not clinically validated)
     risk_w_radiation: float = 0.60
