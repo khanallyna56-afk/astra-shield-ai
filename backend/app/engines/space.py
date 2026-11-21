@@ -134,6 +134,11 @@ class SpaceEngine:
         return abs((datetime.now(UTC) - self.epoch).total_seconds()) / 86400
 
     @property
+    def orbits_per_day(self) -> float:
+        """Mean motion in revolutions/day (= orbital sunrises per day, ~15.5 for the ISS)."""
+        return round(self.sat.model.no_kozai * 1440 / (2 * np.pi), 4)
+
+    @property
     def eclipse_model(self) -> str:
         return "skyfield.is_sunlit + DE421" if self.eph is not None else "analytic cylindrical shadow"
 
