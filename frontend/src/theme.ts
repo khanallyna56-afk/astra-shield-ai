@@ -1,55 +1,105 @@
 import { createTheme } from '@mui/material/styles';
 
+/**
+ * Design tokens: an operations-console palette.
+ * Status colors are reserved for state and always paired with an icon + label.
+ * Crew identity uses the first three validated categorical slots (dark mode),
+ * which are CVD-safe for all pairs.
+ */
+export const T = {
+  bg: '#0a0c0f',
+  panel: '#101317',
+  panel2: '#151920',
+  raised: '#1a1f27',
+  line: '#232931',
+  hairline: '#1b2027',
+  text: '#e6e8eb',
+  text2: '#9aa3ad',
+  muted: '#646d78',
+  accent: '#3987e5',
+  mono: '"IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace',
+  sans: '"IBM Plex Sans", "Segoe UI", system-ui, sans-serif',
+} as const;
+
 export const STATUS_COLORS = { green: '#2e7d32', amber: '#ed6c02', red: '#d32f2f' } as const;
-export const ACCENT = '#22d3ee';
+export const STATUS_TEXT = { green: '#5cb860', amber: '#ff9a3d', red: '#ff6b66' } as const;
+
+/** Fixed crew identity colors (categorical slots 1-3, dark steps). Never reused for status. */
+export const CREW_COLORS: Record<string, string> = {
+  'Vyomnaut 01': '#3987e5',
+  'Vyomnaut 02': '#d95926',
+  'Vyomnaut 03': '#199e70',
+};
+export const crewColor = (cs: string) => CREW_COLORS[cs] ?? T.text2;
+
+/** Routine blocks are muted so EVA and SAA windows carry the signal. */
 export const ACTIVITY_COLORS: Record<string, string> = {
-  sleep: '#5b6bbf',
-  work: '#2b7a9b',
-  exercise: '#3f9b6b',
-  eva: '#e0a526',
-  meal: '#7d6a99',
-  comms: '#4a8fd4',
+  sleep: '#2c3a6b',
+  work: '#262d37',
+  exercise: '#1f5c49',
+  eva: '#c98500',
+  meal: '#3b3348',
+  comms: '#1c3f66',
+};
+export const ACTIVITY_LABEL: Record<string, string> = {
+  sleep: 'Sleep', work: 'Work', exercise: 'Exercise', eva: 'EVA', meal: 'Meal', comms: 'Comms',
 };
 
-/** Dark "mission control" theme: deep navy surfaces, cyan accent, standard status colors. */
 export const theme = createTheme({
   palette: {
     mode: 'dark',
-    primary: { main: ACCENT, contrastText: '#04131f' },
-    secondary: { main: '#7c9cff' },
+    primary: { main: T.accent, contrastText: '#fff' },
     success: { main: STATUS_COLORS.green },
     warning: { main: STATUS_COLORS.amber },
     error: { main: STATUS_COLORS.red },
-    background: { default: '#07111f', paper: '#0d1b2e' },
-    divider: 'rgba(148, 197, 255, 0.12)',
-    text: { primary: '#e6f1ff', secondary: '#8fa6c3' },
+    background: { default: T.bg, paper: T.panel },
+    divider: T.line,
+    text: { primary: T.text, secondary: T.text2, disabled: T.muted },
   },
-  shape: { borderRadius: 10 },
+  shape: { borderRadius: 4 },
   typography: {
-    fontFamily: '"Inter", "Segoe UI", Roboto, system-ui, sans-serif',
-    h5: { fontWeight: 700, letterSpacing: 0.2 },
-    h6: { fontWeight: 600 },
-    overline: { letterSpacing: 1.4, fontWeight: 600 },
+    fontFamily: T.sans,
+    fontSize: 13,
+    h4: { fontWeight: 600, letterSpacing: -0.4 },
+    h5: { fontWeight: 600, letterSpacing: -0.2 },
+    h6: { fontWeight: 600, fontSize: 15 },
+    button: { textTransform: 'none', fontWeight: 600, letterSpacing: 0.1 },
+    overline: { fontWeight: 600, letterSpacing: 1.2, fontSize: 10.5, lineHeight: 1.6 },
   },
   components: {
-    MuiPaper: {
+    MuiCssBaseline: {
+      styleOverrides: { body: { backgroundColor: T.bg, fontFeatureSettings: '"tnum" 1, "zero" 1' } },
+    },
+    MuiPaper: { styleOverrides: { root: { backgroundImage: 'none' } } },
+    MuiButton: {
+      defaultProps: { disableElevation: true },
+      styleOverrides: { root: { borderRadius: 4, paddingInline: 14 }, sizeSmall: { paddingInline: 10 } },
+    },
+    MuiTooltip: {
       styleOverrides: {
-        root: { backgroundImage: 'none', border: '1px solid rgba(148, 197, 255, 0.10)' },
+        tooltip: { backgroundColor: T.raised, border: `1px solid ${T.line}`, fontSize: 12, color: T.text,
+                   padding: '6px 10px', maxWidth: 360 },
+        arrow: { color: T.raised },
       },
     },
-    MuiAppBar: { styleOverrides: { root: { border: 'none' } } },
-    MuiDrawer: { styleOverrides: { paper: { border: 'none', borderRight: '1px solid rgba(148,197,255,0.10)' } } },
-    MuiButton: { styleOverrides: { root: { textTransform: 'none', fontWeight: 600 } } },
-    MuiTab: { styleOverrides: { root: { textTransform: 'none', fontWeight: 600 } } },
+    MuiTab: { styleOverrides: { root: { textTransform: 'none', fontWeight: 600, minHeight: 44 } } },
+    MuiTabs: { styleOverrides: { root: { minHeight: 44 }, indicator: { height: 2 } } },
+    MuiToggleButton: { styleOverrides: { root: { textTransform: 'none', fontWeight: 600, padding: '4px 12px' } } },
+    MuiSnackbarContent: { styleOverrides: { root: { backgroundColor: T.raised, color: T.text } } },
   },
 });
+
+export const AXIS = { gridcolor: '#1b2027', zerolinecolor: '#232931', linecolor: '#232931',
+                      tickfont: { family: T.mono, size: 10.5, color: T.muted } };
 
 export const PLOT_LAYOUT_BASE = {
   paper_bgcolor: 'rgba(0,0,0,0)',
   plot_bgcolor: 'rgba(0,0,0,0)',
-  font: { color: '#c9d8ec', family: 'Inter, Segoe UI, sans-serif', size: 12 },
-  margin: { l: 50, r: 20, t: 20, b: 40 },
-  xaxis: { gridcolor: 'rgba(148,197,255,0.08)', zerolinecolor: 'rgba(148,197,255,0.15)' },
-  yaxis: { gridcolor: 'rgba(148,197,255,0.08)', zerolinecolor: 'rgba(148,197,255,0.15)' },
-  legend: { orientation: 'h' as const, y: -0.2 },
+  font: { color: T.text2, family: T.sans, size: 11.5 },
+  margin: { l: 44, r: 12, t: 8, b: 32 },
+  xaxis: { ...AXIS },
+  yaxis: { ...AXIS },
+  hoverlabel: { bgcolor: T.raised, bordercolor: T.line, font: { family: T.mono, size: 11.5, color: T.text } },
+  hovermode: 'x unified' as const,
+  legend: { orientation: 'h' as const, y: 1.12, x: 0, font: { size: 11 } },
 };

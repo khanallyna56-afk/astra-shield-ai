@@ -165,7 +165,9 @@ export interface Schedule {
 
 export interface DemoResult {
   scenario: string;
+  sim_now: string;
   crew: CrewMember[];
   actions: Action[];
+  lighting: Record<string, 'warm_2700K' | 'cool_6500K'>;
   schedule: Schedule;
 }
