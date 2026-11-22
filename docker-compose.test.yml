@@ -1,0 +1,24 @@
+# docker compose -f docker-compose.test.yml up --build --abort-on-container-exit
+services:
+  db:
+    image: postgres:16-alpine
+    environment: { POSTGRES_USER: astra, POSTGRES_PASSWORD: astra, POSTGRES_DB: astra }
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U astra"]
+      interval: 3s
+      retries: 20
+
+  backend-test:
+    build: ./backend
+    environment:
+      DATABASE_URL: postgresql+asyncpg://astra:astra@db:5432/astra
+      DATA_MODE: offline
+    depends_on:
+      db: { condition: service_healthy }
+    command: sh -c "alembic upgrade head && python -m app.seed && pytest -q --cov=app"
+
+  frontend-test:
+    image: node:22-alpine
+    working_dir: /app
+    volumes: ["./frontend:/app", "/app/node_modules"]
+    command: sh -c "npm ci --no-audit --no-fund && npm run lint && npm run test -- --run"
