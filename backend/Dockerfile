@@ -10,8 +10,10 @@ COPY requirements.txt requirements-dev.txt ./
 RUN pip install -r requirements-dev.txt
 
 # Bundle the JPL DE421 ephemeris at build time (never downloaded at runtime).
-RUN mkdir -p /opt/ephem && curl -fsSL -o /opt/ephem/de421.bsp \
-      https://ssd.jpl.nasa.gov/ftp/eph/planets/bsp/de421.bsp
+# Non-fatal: if JPL is unreachable the engine falls back to its analytic eclipse model.
+RUN mkdir -p /opt/ephem && (curl -fsSL --retry 3 -o /opt/ephem/de421.bsp \
+      https://ssd.jpl.nasa.gov/ftp/eph/planets/bsp/de421.bsp \
+      || (rm -f /opt/ephem/de421.bsp && echo "DE421 unavailable; using analytic eclipse model"))
 ENV EPHEMERIS_PATH=/opt/ephem/de421.bsp
 
 COPY . .

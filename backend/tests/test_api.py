@@ -83,3 +83,16 @@ def test_websocket_pushes_live_payload(client):
         assert msg["type"] == "tick" and len(msg["crew"]) == 3 and "space" in msg
         ws.send_text("refresh")
         assert ws.receive_json()["type"] == "tick"
+
+
+def test_database_url_normalised_for_hosted_postgres():
+    from app.config import Settings
+
+    assert Settings(database_url="postgres://u:p@h:5432/d").database_url == "postgresql+asyncpg://u:p@h:5432/d"
+    assert Settings(database_url="postgresql://u:p@h/d").database_url == "postgresql+asyncpg://u:p@h/d"
+    assert Settings(database_url="sqlite+aiosqlite:///x.db").database_url == "sqlite+aiosqlite:///x.db"
+
+
+def test_cors_allows_configured_origin(client):
+    r = client.get("/api/health", headers={"Origin": "http://localhost:5173"})
+    assert r.headers.get("access-control-allow-origin") == "http://localhost:5173"

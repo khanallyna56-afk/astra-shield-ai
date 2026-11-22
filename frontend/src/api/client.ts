@@ -12,8 +12,13 @@ import type {
   SpaceState,
 } from './types';
 
-/** Empty base = same origin (Vite dev proxy or nginx). Set VITE_API_URL for split deployments. */
-export const API_BASE = (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/$/, '') ?? '';
+/**
+ * API origin. Empty = same origin (Vite dev proxy or nginx).
+ * Split deployments set VITE_API_URL (full URL) or VITE_API_HOST (bare host, e.g. from a Render blueprint).
+ */
+const host = import.meta.env.VITE_API_HOST as string | undefined;
+export const API_BASE = ((import.meta.env.VITE_API_URL as string | undefined) || (host ? `https://${host}` : ''))
+  .replace(/\/$/, '');
 
 export function wsUrl(): string {
   const explicit = import.meta.env.VITE_WS_URL as string | undefined;

@@ -1,7 +1,7 @@
 """Application settings, read from environment variables (see .env.example)."""
 from functools import lru_cache
 
-from pydantic import Field
+from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -12,6 +12,7 @@ class Settings(BaseSettings):
     database_url: str = "postgresql+asyncpg://astra:astra@localhost:5432/astra"
     data_mode: str = Field("offline", pattern="^(live|offline)$")
     cors_origins: str = "http://localhost:5173,http://localhost:3000"
+    cors_origin_regex: str | None = None   # e.g. https://astra-shield-.*\.onrender\.com in production
     log_level: str = "info"
     ephemeris_path: str = ""
     ticker_enabled: bool = True   # background snapshot task (disabled in tests)
@@ -33,6 +34,15 @@ class Settings(BaseSettings):
     # Cache TTLs (seconds)
     tle_ttl_s: int = 6 * 3600
     flare_ttl_s: int = 5 * 60
+
+    @field_validator("database_url")
+    @classmethod
+    def _async_driver(cls, v: str) -> str:
+        """Hosted Postgres (Render, Railway, Heroku) hands out postgres:// URLs; use the asyncpg driver."""
+        for prefix in ("postgres://", "postgresql://"):
+            if v.startswith(prefix):
+                return "postgresql+asyncpg://" + v[len(prefix):]
+        return v
 
     @property
     def cors_list(self) -> list[str]:
